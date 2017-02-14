@@ -14,6 +14,8 @@ public class KakuroBoard {
     private int YDIM;
     private int[][] grid;
 
+    private Stack<MemoryItem> memoryStack = new Stack<>();
+
     KakuroBoard(int XDIM, int YDIM, String input){
         this.XDIM = XDIM;
         this.YDIM = YDIM;
@@ -43,6 +45,20 @@ public class KakuroBoard {
         System.arraycopy(b.grid, 0, grid, 0, XDIM);
     }
 
+    /**
+     * Backtracks by taking a board and the set of pieces and taking reversible
+     * steps down a DFS tree to check whether or not a solution exists.
+     *
+     *  ALGORITHM
+     * 1.   Steps down, and sends a message.
+     * 2.   Choose a piece to insert a value in next. The pieces are
+     *      prioritized by whichever has the fewest remaining unfilled spaces.
+     * 3.   Gather the set of valid values to place in that piece.
+     * 4.   Place one value, updating the corresponding pieces.
+     * 5.   Go deeper and check for a solution. Return if a solution is found.
+     * 6.   If no solution is found, continue trying possible values for that
+     *      piece.
+     * 7.   Return null.*/
     public KakuroBoard backtrack(KakuroBoard b, KakuroSolver.AllPieces pieces){
         System.out.println("STEPPING DOWN...");
         b.printBoard();
@@ -63,16 +79,14 @@ public class KakuroBoard {
         HashSet<Integer> nextVals = curr.getNextVals(b);
         if (nextVals == null){ return null; }
 
-        KakuroBoard deeper;
         for (int val : nextVals){
-            deeper = new KakuroBoard(b);
-            int[] coords = curr.putVal(deeper, val);
+            int[] coords = curr.putVal(b, val);
             Piece update = pieces.lookup(coords, !curr.getAcross());
             update.spcsLeft--;
-            deeper = backtrack(new KakuroBoard(b), pieces);
-            if (deeper != null){ return deeper; }
-            update.spcsLeft++;
-            curr.spcsLeft++;
+            memoryStack.push(new MemoryItem(curr, update, coords));
+            backtrack(b, pieces);
+            //AFTER BACKTRACKING
+            memoryStack.pop().rollback(b);
         }
 
         System.out.println("BACKING UP...");
@@ -343,6 +357,24 @@ public class KakuroBoard {
                     "T" + total +
                     "\t\tacross:" + across +
                     "  \t(" + XY[0] + ", " + XY[1] + ")]";
+        }
+    }
+
+    class MemoryItem{
+        Piece p1;
+        Piece p2;
+        int[] coords = new int[2];
+
+        MemoryItem(Piece p1, Piece p2, int[] coords){
+            this.p1 = p1;
+            this.p2 = p2;
+            this.coords = coords;
+        }
+
+        public void rollback(KakuroBoard b){
+            p1.spcsLeft++;
+            p2.spcsLeft++;
+            b.grid[coords[0]][coords[1]] = -1;
         }
     }
 }
