@@ -1,9 +1,9 @@
 import javafx.application.Application;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.io.*;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Created by Alex on 1/27/2017.
@@ -45,16 +45,25 @@ public class KakuroBoard {
     public KakuroBoard backtrack(KakuroBoard b, KakuroSolver.AllPieces pieces){
         Collections.sort(pieces.pieces);
         Piece curr = pieces.pieces.get(0);  //choose piece with fewest spcsLeft
-
-        for (Integer val : curr.getNextVals(b)){
-            int[] coords = curr.putVal(b, val);
-            Piece update = pieces.lookup(coords, curr.getAcross());
-            backtrack(b, pieces);
-            if (b.isGoal(pieces)){
-                return b;
+        if (curr.spcsLeft == 0){
+            for (Piece p : pieces.pieces){ // has to have more than 0 spcsLeft
+                if (p.spcsLeft > 0){
+                    curr = p;
+                    break;
+                }
             }
         }
 
+        HashSet<Integer> nextVals = curr.getNextVals(b);
+        if (nextVals == null){ return null; }
+        for (int val : nextVals){
+            int[] coords = curr.putVal(b, val);
+            Piece update = pieces.lookup(coords, !curr.getAcross());
+            update.spcsLeft--;
+            printBoard();
+            if (b.isGoal(pieces)){ return b; }
+            backtrack(new KakuroBoard(b), new KakuroSolver.AllPieces(pieces));
+        }
 
         return null;
     }
@@ -120,12 +129,50 @@ public class KakuroBoard {
             this.across = across;
         }
 
-        /**********************/
-        private ArrayList<Integer> getNextVals(KakuroBoard b){
+        Piece(Piece p){
+            this.total = p.total;
+            this.pos = p.pos;
+            this.spcs = p.spcs;
+            this.spcsLeft = p.spcsLeft;
+            this.XY = p.XY;
+            this.across = p.across;
+        }
+
+
+        private HashSet<Integer> getNextVals(KakuroBoard b){
+            if (spcsLeft > 9){ return null; } //unsolvable
+
+            final int[] VALS = {9, 8, 7, 6, 5, 4, 3, 2, 1};
             ArrayList<Integer> possibleValues = new ArrayList<>();
             int workingSum = total - getSoftSum(b);
 
-            return null; //HERE//
+            int maxTotal = 0;
+            for (int x = 0; x < spcsLeft; x++){
+                maxTotal += VALS[x];
+            }
+            if (maxTotal < workingSum){ return null; } //unsolvable
+
+            if (spcsLeft > 2){
+                HashSet<Integer> rtnVALS = Stream.of(9, 8, 7, 6, 5, 4, 3, 2, 1)
+                        .collect(Collectors.toCollection(HashSet::new));
+                return rtnVALS;
+            } //non-optimal, incomplete
+
+            HashSet<Integer> rtn = new HashSet<>();
+            int currSum;
+            for (int x = 0; x < VALS.length - 1; x++){
+                if (VALS[x] > workingSum - 1){ continue; }
+                currSum = workingSum - VALS[x];
+                for (int y = x + 1; y < VALS.length; y++){
+                    if (VALS[y] == currSum){
+                        rtn.add(VALS[x]);
+                        rtn.add(VALS[y]);
+                        break;
+                    }
+                }
+            }
+
+            return rtn;
         }
 
         private int[] putVal(KakuroBoard b, int val){
@@ -133,19 +180,23 @@ public class KakuroBoard {
             int count = 0;
             int[] modified = new int[2];
             if (across){
-                do {
-                    curr = b.grid[XY[0] + count++][XY[1]];
-                } while (curr != -1);
-                b.grid[XY[0] + count][XY[1]] = val;
-                modified[0] = XY[0] + count;
-                modified[1] = XY[1];
-            }else{
-                do{
-                    curr = b.grid[XY[0]][XY[1] + count++];
-                } while (curr != -1);
+                curr = b.grid[XY[0]][XY[1]];
+                while (curr != -1){
+                    count++;
+                    curr = b.grid[XY[0]][XY[1] + count];
+                }
                 b.grid[XY[0]][XY[1] + count] = val;
                 modified[0] = XY[0];
                 modified[1] = XY[1] + count;
+            }else{
+                curr = b.grid[XY[0]][XY[1]];
+                while (curr != -1){
+                    count++;
+                    curr = b.grid[XY[0] + count][XY[1]];
+                }
+                b.grid[XY[0] + count][XY[1]] = val;
+                modified[0] = XY[0] + count;
+                modified[1] = XY[1];
             }
 
             spcsLeft--;
@@ -186,11 +237,11 @@ public class KakuroBoard {
             int sum = 0;
             if (across) {
                 for (int x = 0; x < spcs; x++) {
-                    sum += grid[XY[0] + x][XY[1]];
+                    sum += b.grid[XY[0]][XY[1] + x];
                 }
             }else{
                 for (int x = 0; x < spcs; x++) {
-                    sum += grid[XY[0]][XY[1] + x];
+                    sum += b.grid[XY[0] + x][XY[1]];
                 }
             }
             return sum;

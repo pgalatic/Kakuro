@@ -55,19 +55,28 @@ public class KakuroSolver {
             Collections.sort(pieces);
         }
 
+        AllPieces(AllPieces ap){
+            KakuroBoard b = new KakuroBoard(0, 0, "");
+            for (KakuroBoard.Piece p : ap.pieces){
+                pieces.add(b.new Piece(p));
+            }
+        }
+
         public KakuroBoard.Piece lookup(int[] coords, boolean across){
             if (coords.length != 2){ return null; } //should never happen
             for (KakuroBoard.Piece p : pieces){
                 int[] XY = p.getXY();
-                if (across){
+                if (across){ // we're looking for an ACROSS piece
+                    if (!p.getAcross()){ continue; }
                     if (XY[0] == coords[0]){
-                        if (XY[1] + p.getSpcs() >= coords[1]){
+                        if (XY[1] + p.getSpcs() >= coords[1]){ // X----->?
                             return p;
                         }
                     }
-                }else{
-                    if (XY[1] == coords[1]){
-                        if (XY[0] + p.getSpcs() >= coords[0]){
+                }else{ // we're looking for a DOWN piece        //  X
+                    if (p.getAcross()) { continue; }            //  |
+                    if (XY[1] == coords[1]){                    //  v
+                        if (XY[0] + p.getSpcs() >= coords[0]){  //  ?
                             return p;
                         }
                     }
