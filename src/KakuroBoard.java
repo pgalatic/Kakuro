@@ -39,10 +39,14 @@ public class KakuroBoard {
     KakuroBoard(KakuroBoard b){
         XDIM = b.XDIM;
         YDIM = b.YDIM;
-        grid = b.grid;
+        grid = new int[XDIM][YDIM];
+        System.arraycopy(b.grid, 0, grid, 0, XDIM);
     }
 
     public KakuroBoard backtrack(KakuroBoard b, KakuroSolver.AllPieces pieces){
+        System.out.println("STEPPING DOWN...");
+        b.printBoard();
+
         Collections.sort(pieces.pieces);
         Piece curr = pieces.pieces.get(0);  //choose piece with fewest spcsLeft
         if (curr.spcsLeft == 0){
@@ -54,17 +58,25 @@ public class KakuroBoard {
             }
         }
 
+        if (curr.spcsLeft == 0){ return null; }
+
         HashSet<Integer> nextVals = curr.getNextVals(b);
         if (nextVals == null){ return null; }
+
+        KakuroBoard deeper;
         for (int val : nextVals){
-            int[] coords = curr.putVal(b, val);
+            deeper = new KakuroBoard(b);
+            int[] coords = curr.putVal(deeper, val);
             Piece update = pieces.lookup(coords, !curr.getAcross());
             update.spcsLeft--;
-            printBoard();
-            if (b.isGoal(pieces)){ return b; }
-            backtrack(new KakuroBoard(b), new KakuroSolver.AllPieces(pieces));
+            deeper = backtrack(new KakuroBoard(b), pieces);
+            if (deeper != null){ return deeper; }
+            update.spcsLeft++;
+            curr.spcsLeft++;
         }
 
+        System.out.println("BACKING UP...");
+        b.printBoard();
         return null;
     }
 
@@ -88,7 +100,6 @@ public class KakuroBoard {
     }
 
     public void printBoard(){
-        System.out.println("---------------------");
         for (int x = 0; x < this.XDIM; x++){
             for (int y = 0; y < this.YDIM; y++){
                 int curr = grid[x][y];
@@ -144,6 +155,7 @@ public class KakuroBoard {
 
             final int[] VALS = {9, 8, 7, 6, 5, 4, 3, 2, 1};
             ArrayList<Integer> possibleValues = new ArrayList<>();
+            HashSet<Integer> alreadyPresent = getSoftPieces(b);
             int workingSum = total - getSoftSum(b);
 
             int maxTotal = 0;
@@ -153,15 +165,24 @@ public class KakuroBoard {
             if (maxTotal < workingSum){ return null; } //unsolvable
 
             if (spcsLeft > 2){
-                HashSet<Integer> rtnVALS = Stream.of(9, 8, 7, 6, 5, 4, 3, 2, 1)
+                HashSet<Integer> rtn = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
                         .collect(Collectors.toCollection(HashSet::new));
-                return rtnVALS;
+                rtn.removeAll(alreadyPresent);
+                return rtn;
             } //non-optimal, incomplete
+
+            if (spcsLeft == 1){
+                if (alreadyPresent.contains(workingSum)){ return null; }
+                HashSet<Integer> rtn = Stream.of(workingSum)
+                        .collect(Collectors.toCollection(HashSet::new));
+                return rtn;
+            }
 
             HashSet<Integer> rtn = new HashSet<>();
             int currSum;
             for (int x = 0; x < VALS.length - 1; x++){
                 if (VALS[x] > workingSum - 1){ continue; }
+                if (alreadyPresent.contains(VALS[x])){ continue; }
                 currSum = workingSum - VALS[x];
                 for (int y = x + 1; y < VALS.length; y++){
                     if (VALS[y] == currSum){
@@ -175,7 +196,11 @@ public class KakuroBoard {
             return rtn;
         }
 
-        private int[] putVal(KakuroBoard b, int val){
+        private int[] putVal(KakuroBoard b, int val) throws RuntimeException{
+            if (spcsLeft < 1){
+                throw new RuntimeException("Trying to place inside already full piece.");
+            }
+
             int curr = 0;
             int count = 0;
             int[] modified = new int[2];
@@ -252,21 +277,41 @@ public class KakuroBoard {
         private int getSoftSum(KakuroBoard b){
             int sum = 0;
             if (across) {
-                for (int x = 0; x < spcs - 1; x++) {
-                    if (b.grid[XY[0] + x][XY[1]] == -1){
-                        continue;
-                    }
-                    sum += b.grid[XY[0] + x][XY[1]];
-                }
-            }else{
-                for (int x = 0; x < spcs - 1; x++) {
+                for (int x = 0; x < spcs; x++) {
                     if (b.grid[XY[0]][XY[1] + x] == -1){
                         continue;
                     }
                     sum += b.grid[XY[0]][XY[1] + x];
                 }
+            }else{
+                for (int x = 0; x < spcs; x++) {
+                    if (b.grid[XY[0] + x][XY[1]] == -1){
+                        continue;
+                    }
+                    sum += b.grid[XY[0] + x][XY[1]];
+                }
             }
             return sum;
+        }
+
+        private HashSet<Integer> getSoftPieces(KakuroBoard b){
+            HashSet<Integer> rtn = new HashSet<>();
+            if (across) {
+                for (int x = 0; x < spcs; x++) {
+                    if (b.grid[XY[0]][XY[1] + x] == -1){
+                        continue;
+                    }
+                    rtn.add(b.grid[XY[0]][XY[1] + x]);
+                }
+            }else{
+                for (int x = 0; x < spcs; x++) {
+                    if (b.grid[XY[0] + x][XY[1]] == -1){
+                        continue;
+                    }
+                    rtn.add(b.grid[XY[0] + x][XY[1]]);
+                }
+            }
+            return rtn;
         }
 
         public int getSpcs(){
@@ -286,6 +331,8 @@ public class KakuroBoard {
             if (!(o1 instanceof Piece)) {
                 return -1;
             }
+
+            if (((Piece)o1).spcsLeft == 0){ return -1; }
 
             return spcsLeft - ((Piece)o1).spcsLeft;
         }

@@ -13,12 +13,12 @@ public class KakuroSolver {
     static int[] pieceInputAcross       = {3, 10, 3};
     static int[] pieceInputPosAcross    = {0, 1, 2};
     static int[] pieceInputSpcAcross    = {2, 4, 2};
-    static int[][] pieceInputXYAcross   = {{2, 0}, {0, 1}, {0, 2}};
+    static int[][] pieceInputXYAcross   = {{2, 0}, {1, 0}, {0, 2}};
 
     static int[] pieceInputDown         = {6, 3, 3, 4};
     static int[] pieceInputPosDown      = {0, 1, 2, 3};
     static int[] pieceInputSpcDown      = {2, 2, 2, 2};
-    static int[][] pieceInputXYDown     = {{0, 1}, {1, 1}, {2, 0}, {3, 0}};
+    static int[][] pieceInputXYDown     = {{1, 0}, {1, 1}, {0, 2}, {0, 3}};
 
     static KakuroBoard board;
     static AllPieces pieces;
@@ -55,13 +55,6 @@ public class KakuroSolver {
             Collections.sort(pieces);
         }
 
-        AllPieces(AllPieces ap){
-            KakuroBoard b = new KakuroBoard(0, 0, "");
-            for (KakuroBoard.Piece p : ap.pieces){
-                pieces.add(b.new Piece(p));
-            }
-        }
-
         public KakuroBoard.Piece lookup(int[] coords, boolean across){
             if (coords.length != 2){ return null; } //should never happen
             for (KakuroBoard.Piece p : pieces){
@@ -69,14 +62,16 @@ public class KakuroSolver {
                 if (across){ // we're looking for an ACROSS piece
                     if (!p.getAcross()){ continue; }
                     if (XY[0] == coords[0]){
-                        if (XY[1] + p.getSpcs() >= coords[1]){ // X----->?
+                        if (    XY[1] + p.getSpcs() >= coords[1]||
+                                XY[1] - p.getSpcs() <= coords[1]){ // X----->?
                             return p;
                         }
                     }
-                }else{ // we're looking for a DOWN piece        //  X
+                }else{ // we're looking for a DOWN piece            X
                     if (p.getAcross()) { continue; }            //  |
                     if (XY[1] == coords[1]){                    //  v
-                        if (XY[0] + p.getSpcs() >= coords[0]){  //  ?
+                        if (    XY[0] + p.getSpcs() >= coords[0] ||
+                                XY[0] - p.getSpcs() <= coords[0]){
                             return p;
                         }
                     }
