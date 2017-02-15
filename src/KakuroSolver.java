@@ -10,16 +10,7 @@ import java.util.Scanner;
  */
 public class KakuroSolver {
     static boolean DEBUG = true;
-    static String filename;
     static String input;
-
-    static ArrayList<Integer> pieceInputAcross = new ArrayList<>();
-    static ArrayList<Integer> pieceInputSpcsAcross = new ArrayList<>();
-    static ArrayList<int[]> pieceInputXYAcross = new ArrayList<>();
-
-    static ArrayList<Integer> pieceInputDown = new ArrayList<>();
-    static ArrayList<Integer> pieceInputSpcsDown = new ArrayList<>();
-    static ArrayList<int[]> pieceInputXYDown = new ArrayList<>();
 
     static KakuroBoard board;
     static AllPieces pieces;
@@ -32,39 +23,41 @@ public class KakuroSolver {
         ArrayList<KakuroBoard.Piece> pieces = new ArrayList<>(1);
         KakuroBoard b = new KakuroBoard(0, 0, "");        //null board, to use
                                                                             //Piece constructor
-        AllPieces() throws IOException{
+        AllPieces(String filename) throws IOException{
             File input = new File(filename);
             Scanner in = new Scanner(input);
             String[] line;
+            String[] coords;
             int currLine = 0;
+            //Reading in Across pieces
             while (in.hasNextLine()){
                 line = in.nextLine().split(" ");
-                if (line[0] == "#"){ continue; }
-                switch (currLine){
-
-                }
-
-            }
-
-            for (int x = 0; x < pieceInputAcross.size(); x++){
+                if (line[0].equals("#")){ continue; }
+                if (line[0].equals("?")){ break; }
+                coords = line[2].split(",");
+                int[] orderedPair = {Integer.parseInt(coords[0]), Integer.parseInt(coords[1])};
                 pieces.add(b.new Piece(
-                        pieceInputAcross.get(x),
-                        pieceInputSpcsAcross.get(x),
-                        pieceInputXYAcross.get(x),
+                        Integer.parseInt(line[0]),
+                        Integer.parseInt(line[1]),
+                        orderedPair,
                         true
                 ));
             }
-            for (int x = 0; x < pieceInputDown.size(); x++){
+            //Reading in Down pieces
+            while (in.hasNextLine()){
+                line = in.nextLine().split(" ");
+                if (line[0].equals("#")){ continue; }
+                coords = line[2].split(",");
+                int[] orderedPair = {Integer.parseInt(coords[0]), Integer.parseInt(coords[1])};
                 pieces.add(b.new Piece(
-                        pieceInputDown.get(x),
-                        pieceInputSpcsDown.get(x),
-                        pieceInputXYDown.get(x),
+                        Integer.parseInt(line[0]),
+                        Integer.parseInt(line[1]),
+                        orderedPair,
                         false
                 ));
             }
-
-            Collections.sort(pieces);
         }
+
 
         public KakuroBoard.Piece lookup(int[] coords, boolean across){
             if (coords.length != 2){ return null; } //should never happen
@@ -114,12 +107,13 @@ public class KakuroSolver {
     public static void main(String[] args) {
         int XDIM = 0;
         int YDIM = 0;
+        String filename = null;
 
         if (args.length < 1){
             Scanner in = new Scanner(System.in);
             int chosenFile;
             do{
-                System.out.println("Choose your file. [1]");
+                System.out.println("Choose your file. [1] [2]");
                 chosenFile = in.nextInt();
             } while (chosenFile > 2 || chosenFile < 1);
 
@@ -129,6 +123,12 @@ public class KakuroSolver {
                     input = "XXOOOOOOOOXX";
                     XDIM = 3;
                     YDIM = 4;
+                    break;
+                case 2:
+                    filename = "resources/kakuro2.txt";
+                    input = "OOXXOOOOOXOOOOOOOOOXXXOOXOOXXXOOOOOOOOOXOOOOOXXOO";
+                    XDIM = 7;
+                    YDIM = 7;
                     break;
                 default:
                     System.out.println("Something went wrong in main!");
@@ -143,10 +143,11 @@ public class KakuroSolver {
         System.out.println("This is your board:\n");
         board.printBoard();
         System.out.println("Scanning for pieces...");
-        if (DEBUG){
+        try {
             pieces = new AllPieces(filename);
-        }else {
-            //pieces = new AllPieces(board);
+        } catch (IOException e){
+            System.err.println("Error reading filename. Aborting.");
+            System.exit(-2);
         }
         System.out.println("These are your pieces:");
         System.out.println(pieces);
