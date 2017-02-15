@@ -6,19 +6,27 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Created by Alex on 1/27/2017.
+ * Represents the board of a Kakuro puzzle. Also includes classes for managing
+ * the board and dividing it up into digestible parts.
+ *
+ * @author Paul D Galatic   pdg6505@g.rit.edu
  */
 public class KakuroBoard {
 
     private int XDIM;
     private int YDIM;
     private int[][] grid;
+    private boolean goalFound;
 
     private Stack<MemoryItem> memoryStack = new Stack<>();
 
+    /**
+     * Constructor. Takes a string input and builds a blank board with default
+     * data. */
     KakuroBoard(int XDIM, int YDIM, String input){
         this.XDIM = XDIM;
         this.YDIM = YDIM;
+        this.goalFound = false;
         grid = new int[XDIM][YDIM];
         int currRow = 0, currCol = 0;
         for (int x = 0; x < input.length(); x++){
@@ -38,13 +46,6 @@ public class KakuroBoard {
         }
     }
 
-    KakuroBoard(KakuroBoard b){
-        XDIM = b.XDIM;
-        YDIM = b.YDIM;
-        grid = new int[XDIM][YDIM];
-        System.arraycopy(b.grid, 0, grid, 0, XDIM);
-    }
-
     /**
      * Backtracks by taking a board and the set of pieces and taking reversible
      * steps down a DFS tree to check whether or not a solution exists.
@@ -58,7 +59,12 @@ public class KakuroBoard {
      * 5.   Go deeper and check for a solution. Return if a solution is found.
      * 6.   If no solution is found, continue trying possible values for that
      *      piece.
-     * 7.   Return null.*/
+     * 7.   Return null.
+     *
+     * @param b:        the current node of the DFS search tree
+     * @param pieces:   the pieces of the puzzle
+     * @return:         null if no solution in all child branches, or a
+     *                  solution if one exists*/
     public KakuroBoard backtrack(KakuroBoard b, KakuroSolver.AllPieces pieces){
         System.out.println("STEPPING DOWN...");
         b.printBoard();
@@ -85,6 +91,9 @@ public class KakuroBoard {
             update.spcsLeft--;
             memoryStack.push(new MemoryItem(curr, update, coords));
             backtrack(b, pieces);
+            if (b.goalFound || b.isGoal(pieces)){
+                return b;
+            }
             //AFTER BACKTRACKING
             memoryStack.pop().rollback(b);
         }
@@ -94,15 +103,12 @@ public class KakuroBoard {
         return null;
     }
 
-    public boolean isValid(int currRow, int currCol, KakuroSolver.AllPieces pieces){
-        for (Piece p : pieces.pieces){
-            if (!p.getValid(this)){
-                return false;
-            }
-        }
-        return true;
-    }
-
+    /**
+     * Determines if the current configuration of the Kakuro board is a
+     * solution. Does so by checking each individual piece.
+     *
+     * @param pieces:   the pieces of the puzzle
+     * @return:         true if all the pieces are satisfied, false otherwise*/
     public boolean isGoal(KakuroSolver.AllPieces pieces){
         for (Piece p : pieces.pieces){
             if (!p.getGoal(this)){
@@ -110,9 +116,12 @@ public class KakuroBoard {
             }
         }
 
+        goalFound = true;
         return true;
     }
 
+    /**
+     * Prints out the board. */
     public void printBoard(){
         for (int x = 0; x < this.XDIM; x++){
             for (int y = 0; y < this.YDIM; y++){
@@ -130,17 +139,22 @@ public class KakuroBoard {
         System.out.println("---------------------");
     }
 
+    /**
+     * Represents an individual piece. These pieces intersect one another on
+     * the Kakuro board. */
     class Piece implements Comparable {
-        private int total;
-        private int pos;
-        private int spcs;
-        private int spcsLeft;
-        private int[] XY;
+        private int total;      //target total
+        private int pos;        //a piece's row / column
+        private int spcs;       //size of the piece
+        private int spcsLeft;   //number of unfilled spaces
+        private int[] XY;       //coordinates of the "head" (top-left)
         private boolean across; //true = across, false = down
 
-        Piece(int total, int pos, int spaces, int[] XY, boolean across){
+        /**
+         * Constructor. Takes pre-parsed puzzle information and constructs
+         * a piece out of it. */
+        Piece(int total, int spaces, int[] XY, boolean across){
             this.total = total;
-            this.pos = pos;
             this.spcs = spaces;
             this.spcsLeft = spcs;
             this.XY = new int[2];
@@ -154,48 +168,54 @@ public class KakuroBoard {
             this.across = across;
         }
 
-        Piece(Piece p){
-            this.total = p.total;
-            this.pos = p.pos;
-            this.spcs = p.spcs;
-            this.spcsLeft = p.spcsLeft;
-            this.XY = p.XY;
-            this.across = p.across;
-        }
-
-
+        /**
+         * Determines if there are any valid values that can be added to a
+         * piece. Since Pieces don't have content relating their state, a
+         * KakuroBoard object is required to look up their constituent values
+         * based on their head coordinates.
+         *
+         * @param b:    the board to look up from
+         * @pre:        KakuroBoard b contains [this]
+         * @return:     possible valid values to insert into [this]*/
         private HashSet<Integer> getNextVals(KakuroBoard b){
-            if (spcsLeft > 9){ return null; } //unsolvable
-
+            if (spcsLeft > 9){ return null; }   //unsolvable; cannot fill 10
+                                                //or more spaces
             final int[] VALS = {9, 8, 7, 6, 5, 4, 3, 2, 1};
             ArrayList<Integer> possibleValues = new ArrayList<>();
-            HashSet<Integer> alreadyPresent = getSoftPieces(b);
-            int workingSum = total - getSoftSum(b);
+            HashSet<Integer> alreadyPresent = getSoftValues(b);
+            int workingSum = total - getSoftSum(b); //"value" yet to be filled
 
             int maxTotal = 0;
             for (int x = 0; x < spcsLeft; x++){
                 maxTotal += VALS[x];
             }
-            if (maxTotal < workingSum){ return null; } //unsolvable
+            if (maxTotal < workingSum){ return null; }
+                    //unsolvable; no combination will satisfy the workingSum
+                    //constraint
 
             if (spcsLeft > 2){
                 HashSet<Integer> rtn = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9)
                         .collect(Collectors.toCollection(HashSet::new));
                 rtn.removeAll(alreadyPresent);
                 return rtn;
-            } //non-optimal, incomplete
+            } //non-optimal
 
             if (spcsLeft == 1){
                 if (alreadyPresent.contains(workingSum)){ return null; }
                 HashSet<Integer> rtn = Stream.of(workingSum)
                         .collect(Collectors.toCollection(HashSet::new));
                 return rtn;
-            }
+            } //optimization in case there's only one space to fill
 
             HashSet<Integer> rtn = new HashSet<>();
             int currSum;
+
+            // For all the values 9...2, add all combinations of 9...2 and
+            // other single-digit values to the rtn set
             for (int x = 0; x < VALS.length - 1; x++){
+                //If the value is too big to fit in the piece, skip
                 if (VALS[x] > workingSum - 1){ continue; }
+                //If the value is already present in the piece, skip
                 if (alreadyPresent.contains(VALS[x])){ continue; }
                 currSum = workingSum - VALS[x];
                 for (int y = x + 1; y < VALS.length; y++){
@@ -210,6 +230,15 @@ public class KakuroBoard {
             return rtn;
         }
 
+        /**
+         * Places a value in the grid and updates the piece which calls this
+         * method. The method looks up the head of the piece, then traverses
+         * the piece until it finds an empty space. Once it finds an empty
+         * space, it places the value inside the grid.
+         *
+         * @param b:    the board, so that it can be updated
+         * @param val:  the value to place inside the board
+         * @return:     coordinates of where the board was updated*/
         private int[] putVal(KakuroBoard b, int val) throws RuntimeException{
             if (spcsLeft < 1){
                 throw new RuntimeException("Trying to place inside already full piece.");
@@ -242,6 +271,11 @@ public class KakuroBoard {
             return modified;
         }
 
+        /**
+         * Returns whether or not a piece has satisfied its constraints.
+         *
+         * @param b: this function must read from the board
+         * @return: true if [this] is satisfied, false otherwise*/
         private boolean getGoal(KakuroBoard b){
             int sum = getSum(b);
 
@@ -252,35 +286,36 @@ public class KakuroBoard {
             return false;
         }
 
-        private boolean getValid(KakuroBoard b){
-            int sum = getSum(b);
-
-            if (sum == -1){
-                return true;
-            }
-
-            if (sum == total){
-                return true;
-            }
-
-            return false;
-        }
-
         /**
          * Returns the sum of a Piece if the piece is filled. If the piece is
-         * unfilled, returns -1.
-         * */
+         * unfilled, or a piece contains a duplicate, returns -1.
+         *
+         * @param b:    this function must read from the board
+         * @return:     the sum of a filled, valid piece, or -1*/
         private int getSum(KakuroBoard b){
             if (spcsLeft > 0){ return -1; }
 
+            HashSet<Integer> values = new HashSet<>();
+
             int sum = 0;
+            int curr;
             if (across) {
                 for (int x = 0; x < spcs; x++) {
-                    sum += b.grid[XY[0]][XY[1] + x];
+                    curr = b.grid[XY[0]][XY[1] + x];
+                    if (values.contains(curr)){
+                        return -1;
+                    }
+                    sum += curr;
+                    values.add(curr);
                 }
             }else{
                 for (int x = 0; x < spcs; x++) {
-                    sum += b.grid[XY[0] + x][XY[1]];
+                    curr = b.grid[XY[0] + x][XY[1]];
+                    if (values.contains(curr)){
+                        return -1;
+                    }
+                    sum += curr;
+                    values.add(curr);
                 }
             }
             return sum;
@@ -308,7 +343,13 @@ public class KakuroBoard {
             return sum;
         }
 
-        private HashSet<Integer> getSoftPieces(KakuroBoard b){
+        /**
+         * This function constructs a set of all values it currently possesses,
+         * ignoring blank spaces.
+         *
+         * @param b:    this function must read from the board
+         * @return:     a set of all values in [this]*/
+        private HashSet<Integer> getSoftValues(KakuroBoard b){
             HashSet<Integer> rtn = new HashSet<>();
             if (across) {
                 for (int x = 0; x < spcs; x++) {
@@ -328,18 +369,26 @@ public class KakuroBoard {
             return rtn;
         }
 
+        /**Returns the "spcs" data field.*/
         public int getSpcs(){
             return spcs;
         }
 
+        /**Returns the "XY" data field.*/
         public int[] getXY(){
             return XY;
         }
 
+        /**Returns the "across" data field.*/
         public boolean getAcross(){
             return across;
         }
 
+        /**
+         * Compares two Pieces, with the intent to sort them by the spcsLeft
+         * field, leaving 0s at the bottom. It only somewhat works right now.
+         * TODO.
+         * */
         @Override
         public int compareTo(Object o1) {
             if (!(o1 instanceof Piece)) {
@@ -360,17 +409,27 @@ public class KakuroBoard {
         }
     }
 
+    /**
+     * For the purpose of remembering how the tree was traversed such that
+     * steps could be undone, this class was created. */
     class MemoryItem{
         Piece p1;
         Piece p2;
         int[] coords = new int[2];
 
+        /**A simple constructor.*/
         MemoryItem(Piece p1, Piece p2, int[] coords){
             this.p1 = p1;
             this.p2 = p2;
             this.coords = coords;
         }
 
+        /**
+         * Rolls back a step by incrementing spcsLeft of both pieces and
+         * setting to blank the space found at coords.
+         *
+         * @param b:    this function must write to the board
+         * @post:       [this] is popped off the memory stack*/
         public void rollback(KakuroBoard b){
             p1.spcsLeft++;
             p2.spcsLeft++;

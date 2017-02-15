@@ -1,3 +1,6 @@
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
@@ -10,15 +13,13 @@ public class KakuroSolver {
     static String filename;
     static String input;
 
-    static int[] pieceInputAcross       = {3, 10, 3};
-    static int[] pieceInputPosAcross    = {0, 1, 2};
-    static int[] pieceInputSpcAcross    = {2, 4, 2};
-    static int[][] pieceInputXYAcross   = {{2, 0}, {1, 0}, {0, 2}};
+    static ArrayList<Integer> pieceInputAcross = new ArrayList<>();
+    static ArrayList<Integer> pieceInputSpcsAcross = new ArrayList<>();
+    static ArrayList<int[]> pieceInputXYAcross = new ArrayList<>();
 
-    static int[] pieceInputDown         = {6, 3, 3, 4};
-    static int[] pieceInputPosDown      = {0, 1, 2, 3};
-    static int[] pieceInputSpcDown      = {2, 2, 2, 2};
-    static int[][] pieceInputXYDown     = {{1, 0}, {1, 1}, {0, 2}, {0, 3}};
+    static ArrayList<Integer> pieceInputDown = new ArrayList<>();
+    static ArrayList<Integer> pieceInputSpcsDown = new ArrayList<>();
+    static ArrayList<int[]> pieceInputXYDown = new ArrayList<>();
 
     static KakuroBoard board;
     static AllPieces pieces;
@@ -31,23 +32,33 @@ public class KakuroSolver {
         ArrayList<KakuroBoard.Piece> pieces = new ArrayList<>(1);
         KakuroBoard b = new KakuroBoard(0, 0, "");        //null board, to use
                                                                             //Piece constructor
+        AllPieces() throws IOException{
+            File input = new File(filename);
+            Scanner in = new Scanner(input);
+            String[] line;
+            int currLine = 0;
+            while (in.hasNextLine()){
+                line = in.nextLine().split(" ");
+                if (line[0] == "#"){ continue; }
+                switch (currLine){
 
-        AllPieces(){
-            for (int x = 0; x < pieceInputAcross.length; x++){
+                }
+
+            }
+
+            for (int x = 0; x < pieceInputAcross.size(); x++){
                 pieces.add(b.new Piece(
-                        pieceInputAcross[x],
-                        pieceInputPosAcross[x],
-                        pieceInputSpcAcross[x],
-                        pieceInputXYAcross[x],
+                        pieceInputAcross.get(x),
+                        pieceInputSpcsAcross.get(x),
+                        pieceInputXYAcross.get(x),
                         true
                 ));
             }
-            for (int x = 0; x < pieceInputDown.length; x++){
+            for (int x = 0; x < pieceInputDown.size(); x++){
                 pieces.add(b.new Piece(
-                        pieceInputDown[x],
-                        pieceInputPosDown[x],
-                        pieceInputSpcDown[x],
-                        pieceInputXYDown[x],
+                        pieceInputDown.get(x),
+                        pieceInputSpcsDown.get(x),
+                        pieceInputXYDown.get(x),
                         false
                 ));
             }
@@ -105,28 +116,35 @@ public class KakuroSolver {
         int YDIM = 0;
 
         if (args.length < 1){
-            filename = "src/sample.txt";
-            input = "XXOOOOOOOOXX";
-            XDIM = 3;
-            YDIM = 4;
+            Scanner in = new Scanner(System.in);
+            int chosenFile;
+            do{
+                System.out.println("Choose your file. [1]");
+                chosenFile = in.nextInt();
+            } while (chosenFile > 2 || chosenFile < 1);
+
+            switch (chosenFile){
+                case 1:
+                    filename = "resources/kakuro1.txt";
+                    input = "XXOOOOOOOOXX";
+                    XDIM = 3;
+                    YDIM = 4;
+                    break;
+                default:
+                    System.out.println("Something went wrong in main!");
+                    System.exit(-1);
+            }
         }else{
             System.out.println("Usage: kakurosolver");
             System.exit(0);
         }
-
-        /*
-        System.out.println("What's the number of rows in this puzzle?");
-        XDIM = in.nextInt();
-        System.out.println("What's the number of columns?");
-        YDIM = in.nextInt();
-        */
 
         board = new KakuroBoard(XDIM, YDIM, input);
         System.out.println("This is your board:\n");
         board.printBoard();
         System.out.println("Scanning for pieces...");
         if (DEBUG){
-            pieces = new AllPieces();
+            pieces = new AllPieces(filename);
         }else {
             //pieces = new AllPieces(board);
         }
