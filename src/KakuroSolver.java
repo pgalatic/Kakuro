@@ -66,17 +66,21 @@ public class KakuroSolver {
                 if (across){ // we're looking for an ACROSS piece
                     if (!p.getAcross()){ continue; }
                     if (XY[0] == coords[0]){
-                        if (    XY[1] + p.getSpcs() >= coords[1]||
-                                XY[1] - p.getSpcs() <= coords[1]){ // X----->?
-                            return p;
+                        if (coords[1] == XY[1]){ return p; }
+                        for (int z = 0; z < p.getSpcs(); z++){
+                            if (XY[1] + z == coords[1]){
+                                return p;
+                            }
                         }
                     }
-                }else{ // we're looking for a DOWN piece            X
+                }else{ // we're looking for a DOWN piece            x
                     if (p.getAcross()) { continue; }            //  |
-                    if (XY[1] == coords[1]){                    //  v
-                        if (    XY[0] + p.getSpcs() >= coords[0] ||
-                                XY[0] - p.getSpcs() <= coords[0]){
-                            return p;
+                    if (XY[1] == coords[1]){                    //  |
+                        if (coords[0] == XY[0]){ return p; }    //  |
+                        for (int z = 0; z < p.getSpcs(); z++){  //  V
+                            if (XY[0] + z == coords[0]){        //  ?
+                                return p;
+                            }
                         }
                     }
                 }

@@ -66,9 +66,6 @@ public class KakuroBoard {
      * @return:         null if no solution in all child branches, or a
      *                  solution if one exists*/
     public KakuroBoard backtrack(KakuroBoard b, KakuroSolver.AllPieces pieces){
-        System.out.println("STEPPING DOWN...");
-        b.printBoard();
-
         Collections.sort(pieces.pieces);
         Piece curr = pieces.pieces.get(0);  //choose piece with fewest spcsLeft
         if (curr.spcsLeft == 0){
@@ -98,8 +95,6 @@ public class KakuroBoard {
             memoryStack.pop().rollback(b);
         }
 
-        System.out.println("BACKING UP...");
-        b.printBoard();
         return null;
     }
 
@@ -184,6 +179,7 @@ public class KakuroBoard {
             ArrayList<Integer> possibleValues = new ArrayList<>();
             HashSet<Integer> alreadyPresent = getSoftValues(b);
             int workingSum = total - getSoftSum(b); //"value" yet to be filled
+            if (workingSum < 1){ return null; } //unsolvable, piece too full
 
             int maxTotal = 0;
             for (int x = 0; x < spcsLeft; x++){
