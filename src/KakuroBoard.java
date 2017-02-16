@@ -12,6 +12,7 @@ import java.util.stream.Stream;
  * @author Paul D Galatic   pdg6505@g.rit.edu
  */
 public class KakuroBoard {
+    private int count = 0;
 
     private int XDIM;
     private int YDIM;
@@ -66,6 +67,18 @@ public class KakuroBoard {
      * @return:         null if no solution in all child branches, or a
      *                  solution if one exists*/
     public KakuroBoard backtrack(KakuroBoard b, KakuroSolver.AllPieces pieces){
+        boolean sanity = true;  //some puzzles are currently intractible
+        count++;                //this warns the user
+        if (count > 1000000){
+            count = 0; b.printBoard();
+            if (sanity){
+                sanity = false;
+                System.out.println("WARNING: Puzzle currently intractable. " +
+                                    "Will print out configuration every 1 " +
+                                    "million iterations.");
+            }
+        }
+
         Collections.sort(pieces.pieces);
         Piece curr = pieces.pieces.get(0);  //choose piece with fewest spcsLeft
         if (curr.spcsLeft == 0){
@@ -118,6 +131,7 @@ public class KakuroBoard {
     /**
      * Prints out the board. */
     public void printBoard(){
+        System.out.print("\033[H\033[2J");
         for (int x = 0; x < this.XDIM; x++){
             for (int y = 0; y < this.YDIM; y++){
                 int curr = grid[x][y];
@@ -164,10 +178,10 @@ public class KakuroBoard {
         }
 
         /**
-         * Determines if there are any valid values that can be added to a
-         * piece. Since Pieces don't have content relating their state, a
-         * KakuroBoard object is required to look up their constituent values
-         * based on their head coordinates.
+         * Generates a set of values that can be added to a piece. Since Pieces
+         * don't have content relating their state, a KakuroBoard object is
+         * required to look up their constituent values based on their head
+         * coordinates.
          *
          * @param b:    the board to look up from
          * @pre:        KakuroBoard b contains [this]
@@ -390,8 +404,6 @@ public class KakuroBoard {
             if (!(o1 instanceof Piece)) {
                 return -1;
             }
-
-            if (((Piece)o1).spcsLeft == 0){ return -1; }
 
             return spcsLeft - ((Piece)o1).spcsLeft;
         }

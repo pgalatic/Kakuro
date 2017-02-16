@@ -6,23 +6,27 @@ import java.util.Collections;
 import java.util.Scanner;
 
 /**
- * Created by Alex on 1/27/2017.
+ * Main runnable class. Takes input, constructs a board and its pieces, and
+ * then runs the backtrack() method on its constructed KakuroBoard. For more
+ * information about the Backtracking algorithm, view the KakuroBoard class.
+ *
+ *
+ * @author Paul Galatic pdg6505@g.rit.edu
  */
 public class KakuroSolver {
-    static boolean DEBUG = true;
-    static String input;
+    private static String input;
+    private static AllPieces pieces;
 
-    static KakuroBoard board;
-    static AllPieces pieces;
-    static Scanner in = new Scanner(System.in);
-    static int sanityCount = 0;
-    static int sanityLimit = 25;
-
+    private static KakuroBoard board;
 
     static class AllPieces{
         ArrayList<KakuroBoard.Piece> pieces = new ArrayList<>(1);
         KakuroBoard b = new KakuroBoard(0, 0, "");        //null board, to use
                                                                             //Piece constructor
+
+        /**
+         * Constructor. Takes an input file and parses the data to form the
+         * AllPieces object. */
         AllPieces(String filename) throws IOException{
             File input = new File(filename);
             Scanner in = new Scanner(input);
@@ -58,8 +62,18 @@ public class KakuroSolver {
             }
         }
 
-
-        public KakuroBoard.Piece lookup(int[] coords, boolean across){
+        /**
+         * Looks up a piece in the total list of pieces. If a piece cannot be
+         * found, throws a RuntimeException.
+         *
+         * @pre:    all Pieces are correctly formatted in the input file and
+         *          exist in AllPieces
+         * @param coords: the 'target square' that the the piece definitely
+         *                intersects.
+         * @param across: true if we're looking for a horizonal piece, false
+         *                otherwise
+         * @return: the piece the satisfies both above conditions*/
+        public KakuroBoard.Piece lookup(int[] coords, boolean across) throws RuntimeException{
             if (coords.length != 2){ return null; } //should never happen
             for (KakuroBoard.Piece p : pieces){
                 int[] XY = p.getXY();
@@ -86,8 +100,9 @@ public class KakuroSolver {
                 }
             }
 
-            System.out.println("WARNING: Could not lookup piece!");
-            return null;
+            throw new RuntimeException( "Could not lookup piece. Check " +
+                                        "kakuro.txt and/or lookedup " +
+                                        "algorithm.");
         }
 
         @Override
@@ -100,14 +115,10 @@ public class KakuroSolver {
         }
     }
 
-    private static void sanityPrint(KakuroBoard b){
-        sanityCount++;
-        if (sanityCount == sanityLimit){
-            sanityCount = 0;
-            b.printBoard();
-        }
-    }
-
+    /**
+     * Prompts for input from the user, then imports the requested file and
+     * runs the solver on it. Once the backtracking algorithm has produced a
+     * result, reports the result and quits. */
     public static void main(String[] args) {
         int XDIM = 0;
         int YDIM = 0;
@@ -117,9 +128,9 @@ public class KakuroSolver {
             Scanner in = new Scanner(System.in);
             int chosenFile;
             do{
-                System.out.println("Choose your file. [1] [2]");
+                System.out.println("Choose your file. [1] [2] [3] [4]");
                 chosenFile = in.nextInt();
-            } while (chosenFile > 2 || chosenFile < 1);
+            } while (chosenFile > 4 || chosenFile < 1);
 
             switch (chosenFile){
                 case 1:
@@ -133,6 +144,18 @@ public class KakuroSolver {
                     input = "OOXXOOOOOXOOOOOOOOOXXXOOXOOXXXOOOOOOOOOXOOOOOXXOO";
                     XDIM = 7;
                     YDIM = 7;
+                    break;
+                case 3:
+                    filename = "resources/kakuro3.txt";
+                    input = "OOXOOOOOXOOOOOOOXXXXOOOOOOOXOOOOOXOO";
+                    XDIM = 6;
+                    YDIM = 6;
+                    break;
+                case 4:
+                    filename = "resources/kakuro4.txt";
+                    input = "OOXOOOXOOOOXOOOXOOXOOOOOOOXOOOOXOOOOOOOOXOOOOXXOOOOOXXXOOOOOOOXOOOXXXOOOOOOXXXOOO";
+                    XDIM = 9;
+                    YDIM = 9;
                     break;
                 default:
                     System.out.println("Something went wrong in main!");
