@@ -128,9 +128,9 @@ public class KakuroSolver {
             Scanner in = new Scanner(System.in);
             int chosenFile;
             do{
-                System.out.println("Choose your file. [1] [2] [3] [4]");
+                System.out.println("Choose your file. [1] [2] [3] [4] [5]");
                 chosenFile = in.nextInt();
-            } while (chosenFile > 4 || chosenFile < 1);
+            } while (chosenFile > 5 || chosenFile < 1);
 
             switch (chosenFile){
                 case 1:
@@ -157,6 +157,12 @@ public class KakuroSolver {
                     XDIM = 9;
                     YDIM = 9;
                     break;
+                case 5:
+                    filename = "resources/kakuro5.txt";
+                    input = "OOOOOOOOOOOOOOXOOOXXOOXXX";
+                    XDIM = 5;
+                    YDIM = 5;
+                    break;
                 default:
                     System.out.println("Something went wrong in main!");
                     System.exit(-1);
@@ -179,13 +185,7 @@ public class KakuroSolver {
         System.out.println("These are your pieces:");
         System.out.println(pieces);
         System.out.println("Start backtracking...");
-        board = board.backtrack(board, pieces);
-        if (board == null){
-            System.out.println("No solution found.");
-        }else{
-            System.out.println("Solution found!");
-            board.printBoard();
-        }
-
+        board.backtrack(board, pieces);
+        System.out.println("...backtracking finished.");
     }
 }

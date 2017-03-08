@@ -17,7 +17,7 @@ public class KakuroBoard {
     private int XDIM;
     private int YDIM;
     private int[][] grid;
-    private boolean goalFound;
+    private int numSolutions;
 
     private Stack<MemoryItem> memoryStack = new Stack<>();
 
@@ -27,7 +27,7 @@ public class KakuroBoard {
     KakuroBoard(int XDIM, int YDIM, String input){
         this.XDIM = XDIM;
         this.YDIM = YDIM;
-        this.goalFound = false;
+        this.numSolutions = 0;
         grid = new int[XDIM][YDIM];
         int currRow = 0, currCol = 0;
         for (int x = 0; x < input.length(); x++){
@@ -67,7 +67,7 @@ public class KakuroBoard {
      * @return:         null if no solution in all child branches, or a
      *                  solution if one exists*/
     public KakuroBoard backtrack(KakuroBoard b, KakuroSolver.AllPieces pieces){
-        boolean sanity = true;  //some puzzles are currently intractible
+        boolean sanity = true;  //some puzzles are currently intractable
         count++;                //this warns the user
         if (count > 10000000){
             count = 0; b.printBoard();
@@ -104,8 +104,10 @@ public class KakuroBoard {
             update.update(val);
             memoryStack.push(new MemoryItem(curr, update, coords, val));
             backtrack(b, pieces);
-            if (b.goalFound || b.isGoal(pieces)){
-                return b;
+            if (b.isGoal(pieces)){
+                numSolutions++;
+                System.out.println(String.format("SOLUTION: #%d", numSolutions));
+                b.printBoard();
             }
             //AFTER BACKTRACKING
             memoryStack.pop().rollback(b);
@@ -135,8 +137,12 @@ public class KakuroBoard {
             }
         }
 
-        goalFound = true;
         return true;
+    }
+
+    /** Returns the number of found solutions. */
+    public int getNumSolutions(){
+        return numSolutions;
     }
 
     /**
