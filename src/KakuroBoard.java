@@ -1,3 +1,4 @@
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import javafx.application.Application;
 
 import java.util.*;
@@ -18,6 +19,7 @@ public class KakuroBoard {
     private int YDIM;
     private int[][] grid;
     private int numSolutions;
+    private boolean firstSolutionFound;
 
     private Stack<MemoryItem> memoryStack = new Stack<>();
 
@@ -28,6 +30,7 @@ public class KakuroBoard {
         this.XDIM = XDIM;
         this.YDIM = YDIM;
         this.numSolutions = 0;
+        this.firstSolutionFound = false;
         grid = new int[XDIM][YDIM];
         int currRow = 0, currCol = 0;
         for (int x = 0; x < input.length(); x++){
@@ -108,6 +111,24 @@ public class KakuroBoard {
                 numSolutions++;
                 System.out.println(String.format("SOLUTION: #%d", numSolutions));
                 b.printBoard();
+                if (!firstSolutionFound){ //have we encountered a solution yet?
+                    System.out.print("This puzzle's difficulty estimate " +
+                            "(from EASY:MEDIUM:HARD:VERYHARD:HARDEST) is: ");
+                    if (count < (100)){
+                        System.out.println("EASY");
+                    }else if (count < (1000)){
+                        System.out.println("MEDIUM");
+                    }else if (count < (10000)){
+                        System.out.println("HARD");
+                    }else if (count < (100000)){
+                        System.out.println("VERY HARD");
+                    }else{
+                        System.out.println("HARDEST");
+                    }
+                    System.out.println(String.format("It required %d iterations.", count));
+                    firstSolutionFound = true;
+                }
+
             }
             //AFTER BACKTRACKING
             memoryStack.pop().rollback(b);
