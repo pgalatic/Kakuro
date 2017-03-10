@@ -1,3 +1,4 @@
+import com.sun.deploy.util.StringUtils;
 import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import javafx.application.Application;
 
@@ -14,23 +15,26 @@ import java.util.stream.Stream;
  */
 public class KakuroBoard {
     private int count = 0;
+    private int skipcount = 0;
 
     private int XDIM;
     private int YDIM;
     private int[][] grid;
     private int numSolutions;
     private boolean firstSolutionFound;
+    final private boolean INTERACTIVEMODE;
 
     private Stack<MemoryItem> memoryStack = new Stack<>();
 
     /**
      * Constructor. Takes a string input and builds a blank board with default
      * data. */
-    KakuroBoard(int XDIM, int YDIM, String input){
+    KakuroBoard(int XDIM, int YDIM, String input, boolean INTERACTIVEMODE){
         this.XDIM = XDIM;
         this.YDIM = YDIM;
         this.numSolutions = 0;
         this.firstSolutionFound = false;
+        this.INTERACTIVEMODE = INTERACTIVEMODE;
         grid = new int[XDIM][YDIM];
         int currRow = 0, currCol = 0;
         for (int x = 0; x < input.length(); x++){
@@ -70,6 +74,13 @@ public class KakuroBoard {
      * @return:         null if no solution in all child branches, or a
      *                  solution if one exists*/
     public KakuroBoard backtrack(KakuroBoard b, KakuroSolver.AllPieces pieces){
+        final Scanner in = new Scanner(System.in);
+        String userInput;
+        String userArgs[];
+        int X = -1, Y = -1, Z = -1, zeroOne = -1;
+        boolean userAcrossDown;
+
+        boolean priorityPlace = false;
         boolean sanity = true;  //some puzzles are currently intractable
         count++;                //this warns the user
         if (count > 10000000){
@@ -82,11 +93,62 @@ public class KakuroBoard {
             }
         }
 
+        while (INTERACTIVEMODE){
+            if (firstSolutionFound || skipcount > 0){
+                skipcount--;
+                break;
+            }
+            b.printBoard();
+            System.out.print("> ");
+            userInput = in.nextLine();
+            if (userInput.isEmpty()){
+                break;
+            }
+
+            userArgs = userInput.split(" ");
+
+            switch (userArgs.length){
+                case 1: //TODO add more controls
+                    try{
+                        skipcount = Integer.parseInt(userInput);
+                    }catch (NumberFormatException e){skipcount = -1; continue;}
+
+                    if (skipcount > 0){
+                        System.out.println(String.format("Stepping %d times...", skipcount));
+                    }
+                    break;
+                case 4:
+                    try {
+                        Z = Integer.parseInt(userArgs[0]);
+                        X = Integer.parseInt(userArgs[1]);
+                        Y = Integer.parseInt(userArgs[2]);
+                        zeroOne = Integer.parseInt(userArgs[3]);
+                        if (zeroOne == 0){userAcrossDown = true;}
+                        else{userAcrossDown = false;}
+                        int coords[] = {X, Y};
+                        Piece myPiece = pieces.lookup(coords, userAcrossDown);
+                        coords = myPiece.putVal(b, Z, pieces);
+                        if (coords[0] == -1){
+                            System.err.println("Could not successfully place value.");
+                            continue;
+                        }
+                        Piece update = pieces.lookup(coords, !myPiece.getAcross());
+                        update.update(Z);
+                        memoryStack.push(new MemoryItem(myPiece, update, coords, Z));
+                        b.printBoard();
+                        continue;
+                    }catch (NumberFormatException e){continue;}
+            }
+
+            break;
+
+        }
+
         Collections.sort(pieces.pieces);
         Piece curr = pieces.pieces.get(0);  //choose piece with fewest spcsLeft
         if (curr.spcsLeft == 0){
             for (Piece p : pieces.pieces){  //has to have more than 0 spcsLeft
-                if (p.spcsLeft > 0){        //non-optimal; should sort 0 at the
+                if (p.spcsLeft > 0){        //non-optimal; TODO sort 0 at the
                     curr = p;               //end of the list always
                     break;
                 }
@@ -96,12 +158,14 @@ public class KakuroBoard {
         if (curr.spcsLeft == 0){ return null; }
 
         HashSet<Integer> nextVals = curr.getNextVals(b);
-        if (nextVals == null){ return null; }
+        if (nextVals == null){
+            return null;
+        }
 
         for (int val : nextVals){
             int[] coords = curr.putVal(b, val, pieces);
             if (coords[0] == -1){
-                continue; //could not successfully place a piece
+                continue; //could not successfully place val in a piece
             }
             Piece update = pieces.lookup(coords, !curr.getAcross());
             update.update(val);
@@ -112,29 +176,35 @@ public class KakuroBoard {
                 System.out.println(String.format("SOLUTION: #%d", numSolutions));
                 b.printBoard();
                 if (!firstSolutionFound){ //have we encountered a solution yet?
-                    System.out.print("This puzzle's difficulty estimate " +
-                            "(from EASY:MEDIUM:HARD:VERYHARD:HARDEST) is: ");
-                    if (count < (100)){
-                        System.out.println("EASY");
-                    }else if (count < (1000)){
-                        System.out.println("MEDIUM");
-                    }else if (count < (10000)){
-                        System.out.println("HARD");
-                    }else if (count < (100000)){
-                        System.out.println("VERY HARD");
-                    }else{
-                        System.out.println("HARDEST");
-                    }
-                    System.out.println(String.format("It required %d iterations.", count));
+                    printEstimatedDifficulty(count);
                     firstSolutionFound = true;
                 }
-
             }
             //AFTER BACKTRACKING
             memoryStack.pop().rollback(b);
         }
 
         return null;
+    }
+
+    /**
+     * Prints the estimated difficulty of a puzzle, once a solution has been
+     * found. */
+    private void printEstimatedDifficulty(int count){
+        System.out.print("This puzzle's difficulty estimate " +
+                "(from EASY:MEDIUM:HARD:VERYHARD:HARDEST) is: ");
+        if (count < (100)){
+            System.out.println("EASY");
+        }else if (count < (1000)){
+            System.out.println("MEDIUM");
+        }else if (count < (10000)){
+            System.out.println("HARD");
+        }else if (count < (100000)){
+            System.out.println("VERY HARD");
+        }else{
+            System.out.println("HARDEST");
+        }
+        System.out.println(String.format("It required %d iterations.\n", count));
     }
 
     /**

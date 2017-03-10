@@ -1,14 +1,13 @@
 # FILE INFO kakuro5.txt
 # across, from top to bottom, reading left to right
-27 5 0,0
-19 5 1,0
-20 4 2,0
-19 3 3,0
-9 2 4,0
+3 2 0,0
+5 2 1,0
+6 3 2,0
+6 3 3,1
+6 2 4,2
 ?
 # down, from top to bottom, reading left to right
-23 5 0,0
-31 5 0,1
-12 4 0,2
-13 3 0,3
-16 2 0,4
+6 3 0,0
+10 4 0,1
+7 3 2,2
+3 2 3,3
