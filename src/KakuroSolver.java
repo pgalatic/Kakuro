@@ -195,10 +195,12 @@ public class KakuroSolver {
 
         if (INTERACTIVEMODE){
             System.out.println("You are entering interactive mode. Controls:\n" +
-                    "1.\tEnter:\tStep Once\n" +
-                    "2.\tZ:\t\tStep Z times (e.g. '100' = Step 100 times\n" +
+                    "1.\tEnter:\t\t\tStep Once\n" +
+                    "2.\tZ:\t\t\t\tStep Z times (e.g. '100' = Step 100 times\n" +
                     "3.\tZ X Y [0/1]: Place value Z into the piece that starts at X, Y [across/down]" +
                                     "(e.g. 4 2 0 1 place value 4 into the Down piece with its top at 2,0)\n" +
+                    "4.\tX:\t\t\t\tEntering the letter X removes the top item from the memory stack. " +
+                                    "USE ONLY TO UNDO A MISTAKE RIGHT AFTER IT OCCURS." +
                     "WARNING: EDIT THE BOARD AT YOUR OWN RISK!\n");
         }
 

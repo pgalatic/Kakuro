@@ -109,12 +109,24 @@ public class KakuroBoard {
 
             switch (userArgs.length){
                 case 1: //TODO add more controls
-                    try{
-                        skipcount = Integer.parseInt(userInput);
-                    }catch (NumberFormatException e){skipcount = -1; continue;}
+                    if (userInput.equals("X") || userInput.equals("x")){
+                        try {
+                            memoryStack.pop().rollback(b);
+                        }catch (EmptyStackException e){
+                            System.err.println("You cannot pop from an empty stack.");
+                            continue;
+                        }
+                    }else {
+                        try {
+                            skipcount = Integer.parseInt(userInput);
+                        } catch (NumberFormatException e) {
+                            skipcount = -1;
+                            continue;
+                        }
 
-                    if (skipcount > 0){
-                        System.out.println(String.format("Stepping %d times...", skipcount));
+                        if (skipcount > 0) {
+                            System.out.println(String.format("Stepping %d times...", skipcount));
+                        }
                     }
                     break;
                 case 4:
