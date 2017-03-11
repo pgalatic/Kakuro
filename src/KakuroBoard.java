@@ -110,12 +110,7 @@ public class KakuroBoard {
             switch (userArgs.length){
                 case 1: //TODO add more controls
                     if (userInput.equals("X") || userInput.equals("x")){
-                        try {
-                            memoryStack.pop().rollback(b);
-                        }catch (EmptyStackException e){
-                            System.err.println("You cannot pop from an empty stack.");
-                            continue;
-                        }
+                        return null;
                     }else {
                         try {
                             skipcount = Integer.parseInt(userInput);
@@ -147,7 +142,16 @@ public class KakuroBoard {
                         Piece update = pieces.lookup(coords, !myPiece.getAcross());
                         update.update(Z);
                         memoryStack.push(new MemoryItem(myPiece, update, coords, Z));
-                        b.printBoard();
+                        backtrack(b, pieces);
+                        if (b.isGoal(pieces)){
+                            System.out.println(String.format("SOLUTION: #%d", numSolutions));
+                            b.printBoard();
+                            if (!firstSolutionFound){ //have we encountered a solution yet?
+                                printEstimatedDifficulty(count);
+                            }
+                            return null;
+                        }
+                        memoryStack.pop().rollback(b);
                         continue;
                     }catch (NumberFormatException e){continue;}
             }
@@ -205,13 +209,13 @@ public class KakuroBoard {
     private void printEstimatedDifficulty(int count){
         System.out.print("This puzzle's difficulty estimate " +
                 "(from EASY:MEDIUM:HARD:VERYHARD:HARDEST) is: ");
-        if (count < (100)){
+        if (count < (50)){
             System.out.println("EASY");
-        }else if (count < (1000)){
+        }else if (count < (150)){           // +100 iterations
             System.out.println("MEDIUM");
-        }else if (count < (10000)){
+        }else if (count < (350)){           // +200 iterations
             System.out.println("HARD");
-        }else if (count < (100000)){
+        }else if (count < (750)){           // +400 iterations
             System.out.println("VERY HARD");
         }else{
             System.out.println("HARDEST");

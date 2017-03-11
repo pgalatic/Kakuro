@@ -134,9 +134,9 @@ public class KakuroSolver {
         Scanner in = new Scanner(System.in);
         int chosenFile;
         do{
-            System.out.println("Choose your file. [1] [2] [3] [4] [5]");
+            System.out.println("Choose your file. [1] [2] [3] [4] [5] [6] [7]");
             chosenFile = in.nextInt();
-        } while (chosenFile > 5 || chosenFile < 1);
+        } while (chosenFile > 7 || chosenFile < 1);
 
         switch (chosenFile){
             case 1:
@@ -169,6 +169,18 @@ public class KakuroSolver {
                 XDIM = 5;
                 YDIM = 4;
                 break;
+            case 6:
+                filename = "resources/kakuro6.txt";
+                input = "OXOOOXOOOOOXOOOOOOXXXXOOOOXXOXOOOXXOOXXOOXXOXXXOOOXOOXOOOOOOOOOO";
+                XDIM = 8;
+                YDIM = 8;
+                break;
+            case 7:
+                filename = "resources/kakuro7.txt";
+                input = "XOOOXXXOOOOOOOXXOOOOXXOOOOOOOXXXOOOX";
+                XDIM = 6;
+                YDIM = 6;
+                break;
             default:
                 System.out.println("Something went wrong in main!");
                 System.exit(-1);
@@ -197,10 +209,10 @@ public class KakuroSolver {
             System.out.println("You are entering interactive mode. Controls:\n" +
                     "1.\tEnter:\t\t\tStep Once\n" +
                     "2.\tZ:\t\t\t\tStep Z times (e.g. '100' = Step 100 times\n" +
-                    "3.\tZ X Y [0/1]: Place value Z into the piece that starts at X, Y [across/down]" +
+                    "3.\tZ X Y [0/1]:\tPlace value Z into the piece that starts at X, Y [across/down]" +
                                     "(e.g. 4 2 0 1 place value 4 into the Down piece with its top at 2,0)\n" +
-                    "4.\tX:\t\t\t\tEntering the letter X removes the top item from the memory stack. " +
-                                    "USE ONLY TO UNDO A MISTAKE RIGHT AFTER IT OCCURS." +
+                    "4.\tX:\t\t\t\tEntering the letter X reverses the last move. Be careful undoing moves " +
+                                    "that the computer makes, because it will not make them again." +
                     "WARNING: EDIT THE BOARD AT YOUR OWN RISK!\n");
         }
 
